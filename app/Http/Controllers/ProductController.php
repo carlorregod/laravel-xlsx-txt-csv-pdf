@@ -11,6 +11,9 @@ use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 //Para usar PDF
 use Barryvdh\DomPDF\Facade as PDF;
+//Enviando alertas interactivas
+use Illuminate\Support\Facades\Session; 
+//use Illuminate\Support\Facades\Redirect;
 
 
 class ProductController extends Controller
@@ -60,7 +63,8 @@ class ProductController extends Controller
             $excel->sheet('Productos', function ($sheet) use ($data) {
                     $sheet->with($data,null,'A1',false,false);           
             });
-        })->download('xlsx');
+        })->save('xlsx')->download('xlsx');
+        //Por defecto guarda el archivo e storage/exports
     
 
         echo "Exito 2";
@@ -85,6 +89,38 @@ class ProductController extends Controller
         return $pdf->download('listado2.pdf');
 
     }
+
+    //Subir archivo. url:host/uploadfile
+    public function page_upload_file()
+    {
+        return view('pages.subir_archivo');
+    }
+
+    //Archivo se guarda
+    public function upload_file(Request $request)
+    {
+        //Recuerde que para acceder al storage, se debe ejecutar en la terminal
+        // php artisan storage:link
+        //obtenemos el campo file definido en el formulario
+        $file = $request->file('archivo');
+        //obtenemos el nombre del archivo
+        $nombre = $file->getClientOriginalName();
+        //Conocemos la extensión del archivo
+        $extension = $file->extension();
+        
+        /* Forma 1 de guardado, se guarda el archivo desencriptado */
+        //indicamos que queremos guardar un nuevo archivo en el disco local, en storage/public
+        \Storage::disk('local')->put("public/".$nombre,  \File::get($file));
+
+        /* Forma 2, se guarda de forma encriptada, descomentar siguiente línea */
+        //$file->store('public');
+        Session::flash('message', 'Éxito!!!');
+        //return redirect()->back();
+        return redirect()->route('pagina-subirArchivo');
+        //return redirect()->route('pagina-subirArchivo')->with('message','Exito!!'); //Con este método se omite el Session
+
+    }
+
 
     /**
      * Display a listing of the resource.
